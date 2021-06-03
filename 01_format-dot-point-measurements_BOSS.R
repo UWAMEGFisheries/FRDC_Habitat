@@ -38,7 +38,7 @@ se <- function(x) sd(x)/sqrt(length(x))
 # Study name----
 
 study <- "2021-04_FRDC_BOSS_Habitat"
-
+study2 <- "2021-04_FRDC_BOSS_Habitat_Relief"
 
 
 # Read in metadata----
@@ -62,6 +62,19 @@ habitat <- read.delim(paste(study,"Dot Point Measurements.txt",sep = "_"),header
   mutate(filename=as.character(filename)) %>%
   select(filename,sample,image.row,image.col,broad,morphology,type,fieldofview,relief) %>% # select only these columns to keep
   glimpse() # preview
+
+
+
+relief<-read.delim(paste(study2,"Dot Point Measurements.txt",sep = "_"),header=T,skip=4,stringsAsFactors=FALSE)%>% # read in the file
+  ga.clean.names() %>% # tidy the column names using GlobalArchive function
+  mutate(sample=str_replace_all(.$filename,c(".png"="",".jpg"="",".JPG"="","N"="","E"="","S"="","W"=""))) %>%# remove N,E,S,W from sample
+  mutate(filename=str_replace_all(.$filename,c(".png"="",".jpg"="",".JPG"=""))) %>% #keep filename but remove .jpg (need this for later to ensure unique ID)
+  mutate(sample=as.character(sample)) %>% # in this example dataset, the samples are numerical
+  mutate(filename=as.character(filename)) %>%
+  select(filename,sample,image.row,image.col,broad,morphology,type,fieldofview,relief) %>% # select only these columns to keep
+  glimpse() # preview
+
+
 
 
 
@@ -98,14 +111,14 @@ fov<-habitat%>%
   glimpse()
 
 # Create relief----
-relief<-habitat%>%
+relief2<-relief%>%
   dplyr::filter(!broad%in%c("Open Water","Unknown"))%>%
   dplyr::filter(!relief%in%c(""))%>%
   dplyr::select(-c(broad,morphology,type,fieldofview,image.row,image.col))%>%
-  dplyr::mutate(relief.rank=ifelse(relief=="0. Flat substrate, sandy, rubble with few features. ~0 substrate slope.",0,
-                                   ifelse(relief=="1. Some relief features amongst mostly flat substrate/sand/rubble. <45 degree substrate slope.",1,
-                                          ifelse(relief=="2. Mostly relief features amongst some flat substrate or rubble. ~45 substrate slope.",2,
-                                                 ifelse(relief=="3. Good relief structure with some overhangs. >45 substrate slope.",3,
+  dplyr::mutate(relief.rank=ifelse(relief==".0. Flat substrate, sandy, rubble with few features. ~0 substrate slope.",0,
+                                   ifelse(relief==".1. Some relief features amongst mostly flat substrate/sand/rubble. <45 degree substrate slope.",1,
+                                          ifelse(relief==".2. Mostly relief features amongst some flat substrate or rubble. ~45 substrate slope.",2,
+                                                 ifelse(relief==".3. Good relief structure with some overhangs. >45 substrate slope.",3,
                                                         ifelse(relief==".4. High structural complexity, fissures and caves. Vertical wall. ~90 substrate slope.",4,
                                                                ifelse(relief==".5. Exceptional structural complexity, numerous large holes and caves. Vertical wall. ~90 substrate slope.",5,relief)))))))%>%
   dplyr::select(-c(relief))%>%
@@ -165,6 +178,7 @@ dir()
 
 habitat.broad <- metadata%>%
   left_join(fov,by="sample")%>%
+  left_join(relief2,by="sample")%>%
    left_join(broad,by="sample")
 
 
@@ -172,7 +186,7 @@ write.csv(habitat.broad,file=paste(study,"_broad.habitat.csv",sep = "."), row.na
 
 habitat.detailed <- metadata%>%
   left_join(fov,by="sample")%>%
-  #left_join(relief,by="sample")%>%
+  left_join(relief2,by="sample")%>%
   left_join(detailed,by="sample")
 
 write.csv(habitat.detailed,file=paste(study,"_detailed.habitat.csv",sep = "."), row.names=FALSE)
