@@ -87,6 +87,17 @@ wrong.number<-number.of.annotations%>%
   filter(!number.of.annotations==80) %>% 
   glimpse() # see images where there is too many or too little annotations (in this example there are none), go back into the *.TMObs file to fix this before re-exporting DO NOT FIX IN THE TXT FILE
 
+
+# Check number of points per image ----
+number.of.annotations2<-relief%>%
+  dplyr::group_by(filename)%>%
+  dplyr::summarise(number.of.annotations=n()) %>% # count the number of annotations per image
+  glimpse()
+wrong.number<-number.of.annotations2%>%
+  filter(!number.of.annotations==80) %>% 
+  glimpse()
+
+
 # Check that the image names match the metadata samples -----
 missing.metadata <- anti_join(habitat,metadata, by = c("sample")) # samples in habitat that don't have a match in the metadata
 missing.habitat <- anti_join(metadata,habitat, by = c("sample")) # samples in the metadata that don't have a match in habitat
