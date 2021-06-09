@@ -41,12 +41,12 @@ se.min <- function(x) (mean(x)) - se(x)
 se.max <- function(x) (mean(x)) + se(x)
 
 theme.larger.text<-theme(
-  strip.text.x = element_text(size = 12,angle = 0),
-  strip.text.y = element_text(size = 12),
-  axis.title.x=element_text(vjust=-0.0, size=10),
-  axis.title.y=element_text(vjust=0.0,size=10),
-  axis.text.x=element_text(size=12),
-  axis.text.y=element_text(size=12),
+  strip.text.x = element_text(size = 10,angle = 90),
+  strip.text.y = element_text(size = 10),
+  axis.title.x=element_text(vjust=-0.0, size=12),
+  axis.title.y=element_text(vjust=0.0,size=12),
+  axis.text.x=element_text(size = 10,angle = 90),
+  axis.text.y=element_text(size=10),
   legend.title = element_text(family="TN",size=12),
   legend.text = element_text(family="TN",size=12))
 
@@ -81,6 +81,12 @@ dir()
 
 shapefile <- readOGR(paste(s.dir, "WA_wgs84.shp", sep='/'))
 shapefile_df <- fortify(shapefile)
+plot(shapefile)
+e <- drawExtent()
+sh <- crop(shapefile, e)
+plot(sh)
+sh_df <- fortify(sh)
+
 
 # read in maxn
 setwd(dt.dir)
@@ -142,8 +148,8 @@ spatial.reef
 #-----Spatial Seagrasses  %---------
 spatial.seagrasses<-ggplot() +
   geom_polygon(data = shapefile_df, aes(x = long, y = lat, group = group),color = 'black', fill = 'grey90', size = .2)+
-  geom_point(data=filter(maxn, seagrasses==0), aes(longitude,latitude,size=seagrasses),shape=21,colour="dodgerblue4",fill="white",alpha=0.75)+
-  geom_point(data=filter(maxn, seagrasses>0),aes(longitude,latitude,size=seagrasses),shape=21,colour="dodgerblue4",fill="dodgerblue2",alpha=0.75)+
+  geom_point(data=filter(Macroalgae, seagrasses==0), aes(longitude,latitude,size=seagrasses),shape=21,colour="dodgerblue4",fill="white",alpha=0.75)+
+  geom_point(data=filter(Macroalgae, seagrasses>0),aes(longitude,latitude,size=seagrasses),shape=21,colour="dodgerblue4",fill="dodgerblue2",alpha=0.75)+
   xlab('Longitude')+
   ylab('Latitude')+
   labs(size = "% cover\nseagrasses")+
@@ -328,15 +334,17 @@ hab<-broad.hab%>%
   glimpse()
 
 bedforms <- ggplot() +
-  geom_polygon(data = shapefile_df, aes(x = long, y = lat, group = group),color = 'black', fill = 'grey90', size = .1)+
-  geom_scatterpie(data=hab, aes(x=longitude, y=latitude,r=150),
-                    data=hab, cols=c("Macroalgae","Sand"), color="black", alpha=.8,legend_name="Habitat")+
-  xlab('Longitude')+
-  ylab('Latitude')+
-  labs(size = "Relative abundance")+
-  theme_bw()+
-  theme_collapse+
-  theme.larger.text
+  #geom_polygon(data = shapefile_df, aes(x = long, y = lat, group = group),color = 'black', fill = 'grey90', size = .1) +
+  geom_scatterpie(data = broad.hab, aes(x=longitude, y=latitude, r=150),
+  #data=broad.hab, 
+  cols=c("Consolidated", "Macroalgae", "Seagrasses", "Sponges", "Corals", "Unknown"), color="black", alpha=.8,legend_name="Habitat") +
+  coord.equal() +
+  xlab('Longitude') +
+  ylab('Latitude') +
+  labs(size = "Habitat type") +
+  theme_bw() +
+  theme_collapse +
+  theme.larger.text 
 bedforms
 
 hab.sp<-habitat%>%
@@ -383,3 +391,93 @@ spatial.deployments
 setwd(plots.dir)
 ggsave("deployment.map.png",spatial.deployments,dpi=300)
 
+
+
+#### TESTING ----
+
+# General plot ----
+
+ggplot() +
+  geom_polygon(data = sh_df, aes(x = long, y = lat, group = group),color = 'black', fill = 'grey90', size = .2) +
+  #coord_cartesian(xlim = c(-32.29250317636435,-32.76632974729254), ylim =  c(115.42421499835982, 115.79944256928025)) +
+  geom_scatterpie(aes(x=longitude, y=latitude, group = site), data = broad.hab, #%>% filter(site == 'Mandurah'), 
+                  cols = c("Consolidated", "Macroalgae", "Seagrasses", "Sponges", "Corals", "Unknown"), color="black", alpha=.8,legend_name="Habitat")
+
+
+# site specific plot ----
+
+colors <- c( '#4575b4','#fee090', '#fdae61', '#f46d43','#DCDCDC', '#d73027', '#e0f3f8' )  
+
+# Mandurah ----
+
+m <- ggplot() +
+  geom_polygon(data = sh_df, aes(x = long, y = lat, group = group),color = 'black', fill = 'grey90', size = .2) +
+  coord_cartesian(xlim = c(115.53,  115.65), ylim =  c(-32.81, -32.65)) +
+  geom_scatterpie(aes(x=longitude, y=latitude, group = site, r = 0.0035), data = broad.hab %>% filter(site == 'Mandurah'), 
+                  cols = c("Consolidated", "Macroalgae", "Seagrasses", "Sponges", "Corals", "Unknown"), color="black", alpha=.8, legend_name="Habitat")+
+  labs(title = "Mandurah", fill = "Habitat type") +
+  scale_fill_manual(values = colors) +
+  xlab('Longitude')+
+  ylab('Latitude')+
+  #labs(size = "Percent cover")+
+  theme_bw() +
+  theme_collapse +
+  theme.larger.text 
+
+
+
+# Garden Island ----
+
+gi <- ggplot() +
+  geom_polygon(data = sh_df, aes(x = long, y = lat, group = group),color = 'black', fill = 'grey90', size = .2) +
+  coord_cartesian(xlim = c(115.58,   115.69994695733632), ylim =  c(-32.25862151126115, -32.130875860857905)) + 
+  geom_scatterpie(aes(x=longitude, y=latitude, group = site, r = 0.0035), data = broad.hab %>% filter(site == 'Garden Island'), 
+                  cols = c("Consolidated", "Macroalgae", "Seagrasses", "Sponges", "Corals", "Unknown"), color="black", alpha=.8, legend_name="Habitat")+
+  labs(title = "Green Island", fill = "Habitat type") +
+  scale_fill_manual(values = colors) +
+  xlab('Longitude') +
+  ylab('Latitude') +
+  #labs(size = "Percent cover")+
+  theme_bw() +
+  theme_collapse +
+  theme.larger.text 
+
+gi
+
+
+# Two Rocks ----
+
+tr <- ggplot() +
+  geom_polygon(data = sh_df, aes(x = long, y = lat, group = group),color = 'black', fill = 'grey90', size = .2) +
+  coord_cartesian(xlim = c(115.49, 115.65), ylim =  c(-31.6, -31.44)) + 
+  geom_scatterpie(aes(x=longitude, y=latitude, group = site, r = 0.0035), data = broad.hab %>% filter(site == 'Two Rocks'), 
+                  cols = c("Consolidated", "Macroalgae", "Seagrasses", "Sponges", "Corals", "Unknown"), color="black", alpha=.8, legend_name="Habitat")+
+  labs(title = "Two Rocks", fill = "Habitat type") +
+  scale_fill_manual(values = colors) +
+  xlab('Longitude') +
+  ylab('Latitude') +
+  #labs(size = "Percent cover")+
+  theme_bw() +
+  theme_collapse +
+  theme.larger.text 
+
+tr
+
+
+# Lancelin ----
+
+ln <- ggplot() +
+  geom_polygon(data = sh_df, aes(x = long, y = lat, group = group),color = 'black', fill = 'grey90', size = .2) +
+  coord_cartesian(xlim = c(115.49, 115.65), ylim =  c(-31.6, -31.44)) + 
+  geom_scatterpie(aes(x=longitude, y=latitude, group = site, r = 0.0035), data = broad.hab %>% filter(site == 'Lancelin'), 
+                  cols = c("Consolidated", "Macroalgae", "Seagrasses", "Sponges", "Corals", "Unknown"), color="black", alpha=.8, legend_name="Habitat")+
+  labs(title = "Lancelin", fill = "Habitat type") +
+  scale_fill_manual(values = colors) +
+  xlab('Longitude') +
+  ylab('Latitude') +
+  #labs(size = "Percent cover")+
+  theme_bw() +
+  theme_collapse +
+  theme.larger.text 
+
+ln
