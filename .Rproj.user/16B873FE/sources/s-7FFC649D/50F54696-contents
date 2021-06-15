@@ -91,10 +91,9 @@ sh_df <- fortify(sh)
 
 
 # read in maxn
-setwd(dt.dir)
-dir()
 
-broad.hab <- read.csv("2021-04_FRDC_BOSS_Habitat._broad.habitat.csv") %>% #glimpse()
+
+broad.hab <- read.csv(paste(dt.dir, "2021-04_FRDC_BOSS_Habitat._broad.habitat.csv", sep='/')) %>% #glimpse()
   rename(Macroalgae = broad.Macroalgae) %>%
   rename(Consolidated = broad.Consolidated) %>%
   rename(Seagrasses = broad.Seagrasses) %>%
@@ -118,14 +117,14 @@ broad.hab <- read.csv("2021-04_FRDC_BOSS_Habitat._broad.habitat.csv") %>% #glimp
 #### PIE PLOTS ----
 
 # get colors ----
-#pal1 <- choose_palette()
-#pal11 <- pal1(9) #raster colors
+pal1 <- choose_palette()
+pal11 <- pal1(11) #raster colors
 
 #pal2 <- choose_palette()
 #pal21 <- pal2(7)
 
-pal3 <- c("#2A5676", "#336B88" ,"#3B809A" ,"#5095A8", "#67A9B6", "#7FBCC3", "#99CFD1", "#B3E1DE", "#D2EEEA",
-          "#000000", "#006006", "#FFFF00", "#00F00F" ,"#FF6FF6" ,"#999999")
+pal3 <- c("#009B9F", "#00ACAF", "#5EBCBF" ,"#97CDCF", "#C6DFE0", "#F1F1F1" ,"#E9D4E2" ,"#E2B8D3", "#D99BC5", "#D07DB7", "#C75DAA",
+          "#000000", "#006006", "#FFFF00", "#00F00F" ,"#6600CC", "#FF6FF6" ,"#999999")
 
 
 #reorder columns for plotting ----
@@ -171,7 +170,70 @@ m
 
 
 
+### TEST loop ----
+
+setwd(p.dir)
+
+# Load rasters ----
+
+#first import all files in a single folder as a list --
+rast.list <- list.files(path = r.dir, pattern='.tif$', all.files=TRUE, full.names=TRUE)
+
+#import all raster files in folder using lapply --
+allrasters <- lapply(rast.list, raster) # list of raster files
+allrasters
+
+# list names of sites ----
+levels(broad.hab1$site)
+
+sites <- c("Easter Island", "Wallabi Island", "Kalbarri", "Port Gregory", "Mandurah", "Garden Island",
+           "Two Rocks", "Lancelin", "Cervantes", "Jurien", "Freshwater", "Dongara")
+sites[1]
 
 
+# loop ----
 
-
+for(i in 1:length(allrasters)){
+  
+  # get raster
+  site.raster <- allrasters[[2]]
+  # get raster extent
+  site.extent <- site.raster@extent
+  xmin <- site.extent@xmin
+  xmax <- site.extent@xmax
+  ymin <- site.extent@ymin
+  ymax <- site.extent@ymax
+  # raster as data frame for plotting
+  rdf <- raster::as.data.frame(site.raster, xy=T)
+  #rename columns
+  names(rdf) <- c('x', 'y', 'class')
+  
+  # get site name
+  site.name <- paste(sites[2])
+  
+  # plot
+  png(paste(sites[2], "png", sep = "."), 
+      width = 10, height = 5, units = "in", 
+      res = 600)
+  print(
+    ggplot() +
+      geom_raster(data = rdf, aes(x=x, y=y, fill = factor(class)), alpha = 0.5) +
+      #scale_fill_manual(values = pal11) +
+      geom_polygon(data = sh_df, aes(x = long, y = lat, group = group), color = 'black', fill = 'grey90', size = .2) +
+      coord_cartesian(xlim = c(xmin,  xmax), ylim =  c(ymin, ymax)) +
+      geom_scatterpie(data = broad.hab1[broad.hab1$site == site.name,],
+                      #data = broad.hab1 %>% filter(site == site.name), 
+                      aes(x=longitude, y=latitude, group = site, r = 0.0015),  
+                      cols = c("Seagrasses", "Macroalgae", "Sand", "Consolidated",  "Sponges", "Corals", "Unknown"), 
+                      color="black", alpha=.8, legend_name="Habitat") +
+      labs(title = site.name, fill = "Habitat type") +
+      scale_fill_manual(values = pal3) +
+      xlab('Longitude') +
+      ylab('Latitude') +
+      #labs(size = "Percent cover")+
+      theme_bw() +
+      theme_collapse +
+      theme.larger.text 
+  )
+  dev.off()
+}
