@@ -123,7 +123,7 @@ pal11 <- pal1(11) #raster colors
 #pal2 <- choose_palette()
 #pal21 <- pal2(7)
 
-pal3 <- c("#009B9F", "#00ACAF", "#5EBCBF" ,"#97CDCF", "#C6DFE0", "#F1F1F1" ,"#E9D4E2" ,"#E2B8D3", "#D99BC5", "#D07DB7", "#C75DAA",
+pal3 <- c("#2A5676" ,"#316785" ,"#387893", "#4389A0" ,"#5599AB", "#67A9B6", "#7BB8C1" ,"#8EC8CB", "#A3D6D6", "#B8E4E1", "#D2EEEA",
           "#000000", "#006006", "#FFFF00", "#00F00F" ,"#6600CC", "#FF6FF6" ,"#999999")
 
 
@@ -170,7 +170,7 @@ m
 
 
 
-### TEST loop ----
+### Plot loop ----
 
 setwd(p.dir)
 
@@ -186,17 +186,27 @@ allrasters
 # list names of sites ----
 levels(broad.hab1$site)
 
-sites <- c("Easter Island", "Wallabi Island", "Kalbarri", "Port Gregory", "Mandurah", "Garden Island",
-           "Two Rocks", "Lancelin", "Cervantes", "Jurien", "Freshwater", "Dongara")
+sites <- c("Easter Island",  "Jurien", "Freshwater", "Dongara", "Wallabi Island", "Port Gregory",  "Kalbarri", "Mandurah", "Garden Island",
+           "Two Rocks", "Lancelin", "Cervantes")
 sites[1]
 
+# split df by sites ----
+levels(broad.hab1$site)
+#reorder levels of factor--
+broad.hab1$site <- factor(broad.hab1$site, levels = c("Easter Island",  "Jurien", "Freshwater", "Dongara", "Wallabi Island", "Port Gregory",  "Kalbarri", "Mandurah", "Garden Island",
+                                                      "Two Rocks", "Lancelin", "Cervantes"))
+levels(broad.hab1$site)
 
-# loop ----
+df.sites <- split(broad.hab1, broad.hab1$site)
+df.sites[5]
+
+# plot ----
 
 for(i in 1:length(allrasters)){
   
   # get raster
-  site.raster <- allrasters[[2]]
+  site.raster <- allrasters[[i]]
+  plot(site.raster)
   # get raster extent
   site.extent <- site.raster@extent
   xmin <- site.extent@xmin
@@ -209,10 +219,14 @@ for(i in 1:length(allrasters)){
   names(rdf) <- c('x', 'y', 'class')
   
   # get site name
-  site.name <- paste(sites[2])
+  site.name <- paste(sites[i])
+  
+  # site data
+  site.data <- as.data.frame(df.sites[i])
+  names(site.data) <- names(broad.hab1)
   
   # plot
-  png(paste(sites[2], "png", sep = "."), 
+  png(paste(sites[i], "png", sep = "."), 
       width = 10, height = 5, units = "in", 
       res = 600)
   print(
@@ -221,9 +235,10 @@ for(i in 1:length(allrasters)){
       #scale_fill_manual(values = pal11) +
       geom_polygon(data = sh_df, aes(x = long, y = lat, group = group), color = 'black', fill = 'grey90', size = .2) +
       coord_cartesian(xlim = c(xmin,  xmax), ylim =  c(ymin, ymax)) +
-      geom_scatterpie(data = broad.hab1[broad.hab1$site == site.name,],
+      geom_scatterpie(data = site.data,
+                      #data = broad.hab1[broad.hab1$site == site.name,],
                       #data = broad.hab1 %>% filter(site == site.name), 
-                      aes(x=longitude, y=latitude, group = site, r = 0.0015),  
+                      aes(x=longitude, y=latitude, r = 0.0015),  
                       cols = c("Seagrasses", "Macroalgae", "Sand", "Consolidated",  "Sponges", "Corals", "Unknown"), 
                       color="black", alpha=.8, legend_name="Habitat") +
       labs(title = site.name, fill = "Habitat type") +
