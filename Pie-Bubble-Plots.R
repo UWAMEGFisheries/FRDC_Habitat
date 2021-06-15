@@ -3,8 +3,8 @@ rm(list=ls())
 
  
 # Libraries required
-install_github("UWAMEGFisheries/GlobalArchive") #to check for updates
-library(GlobalArchive)
+#install_github("UWAMEGFisheries/GlobalArchive") #to check for updates
+#library(GlobalArchive)
 
 library(tidyr)
 library(dplyr)
@@ -83,7 +83,8 @@ dir()
 shapefile <- readOGR(paste(s.dir, "WA_wgs84.shp", sep='/'))
 shapefile_df <- fortify(shapefile)
 plot(shapefile)
-e <- drawExtent()
+#e <- drawExtent()
+e <- extent(112.7169 , 116.0445 , -33.37469 , -27.00236)
 sh <- crop(shapefile, e)
 plot(sh)
 sh_df <- fortify(sh)
