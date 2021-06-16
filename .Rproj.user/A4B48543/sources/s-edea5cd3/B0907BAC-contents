@@ -222,14 +222,14 @@ for(i in 1:length(allrasters)){
   names(rdf) <- c('x', 'y', 'class')
   
   # get site name
-  site.name <- paste(sites[i])
+  site.name <- paste(sites[1])
   
   # site data
   site.data <- as.data.frame(df.sites[i])
   names(site.data) <- names(broad.hab1)
   
   # plot
-  png(paste(sites[i], "png", sep = "."), 
+  png(paste(sites[i], "scatterpie", "png", sep = "."), 
       width = 10, height = 7, units = "in", 
       res = 600)
   print(
